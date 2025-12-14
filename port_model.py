@@ -579,7 +579,7 @@ def answer_key_questions(results, config):
 def main():
     st.set_page_config(page_title="Симуляция Порта", layout="wide")
 
-    st.title("🚢 Симуляционная модель морского порта Лена")
+    st.title("🚢 Симуляционная модель морского порта")
     st.markdown("---")
 
     # Параметры конфигурации
@@ -587,32 +587,37 @@ def main():
 
     # Причалы
     st.sidebar.subheader("Причалы")
-    oil_berths = st.sidebar.number_input("Нефтяные причалы", min_value=1, max_value=10, value=5)
-    dry_berths = st.sidebar.number_input("Сухогрузные причалы", min_value=1, max_value=10, value=5)
+    oil_berths = st.sidebar.number_input("Нефтяные причалы", min_value=1, max_value=25, value=5)
+    dry_berths = st.sidebar.number_input("Сухогрузные причалы", min_value=1, max_value=25, value=5)
 
     # Перегрузочное оборудование
     st.sidebar.subheader("Перегрузочное оборудование")
-    cranes = st.sidebar.number_input("Краны", min_value=1, max_value=20, value=7)
-    grain_speed = st.sidebar.number_input("Скорость разгрузки зерна (т/ч)", min_value=100, max_value=500, value=300)
-    oil_speed = st.sidebar.number_input("Скорость разгрузки нефти (т/ч)", min_value=500, max_value=2000, value=1000)
-    general_speed = st.sidebar.number_input("Скорость разгрузки генгрузов (т/ч)", min_value=10, max_value=50, value=20)
+    cranes = st.sidebar.number_input("Краны", min_value=1, max_value=100, value=7)
+    grain_speed = st.sidebar.number_input("Скорость разгрузки зерна (т/ч)", min_value=100, max_value=2000, value=300)
+    oil_speed = st.sidebar.number_input("Скорость разгрузки нефти (т/ч)", min_value=500, max_value=5000, value=1000)
+    general_speed = st.sidebar.number_input("Скорость разгрузки генгрузов (т/ч)", min_value=10, max_value=200, value=20)
+
+    # Коэффициент перевода TEU в тонны (средний вес груженого контейнера)
+    TEU_TO_TONS = 12
 
     # Склады
-    st.sidebar.subheader("Склады (тонн)")
-    grain_storage = st.sidebar.number_input("Емкость зернового склада", min_value=10000, max_value=200000, value=100000, step=10000)
-    general_storage = st.sidebar.number_input("Емкость общего склада", min_value=5000, max_value=100000, value=20000, step=5000)
-    oil_storage = st.sidebar.number_input("Емкость нефтебазы", min_value=100000, max_value=1000000, value=540000, step=50000)
+    st.sidebar.subheader("Склады")
+    grain_storage = st.sidebar.number_input("Емкость зернового склада (тонн)", min_value=10000, max_value=500000, value=100000, step=10000)
+    general_storage_teu = st.sidebar.number_input("Емкость общего склада (TEU)", min_value=100, max_value=50000, value=1667, step=100)
+    st.sidebar.caption(f"≈ {general_storage_teu * TEU_TO_TONS:,.0f} тонн (1 TEU = {TEU_TO_TONS} т)")
+    oil_storage = st.sidebar.number_input("Емкость нефтебазы (тонн)", min_value=100000, max_value=5000000, value=540000, step=50000)
 
     # ЖД инфраструктура
     st.sidebar.subheader("ЖД инфраструктура")
-    trains_per_day = st.sidebar.number_input("Поездов в сутки", min_value=1, max_value=20, value=7)
-    train_capacity = st.sidebar.number_input("Вместимость поезда (тонн)", min_value=500, max_value=5000, value=2000, step=500)
-    railway_capacity = st.sidebar.number_input("Количество ЖД путей", min_value=1, max_value=10, value=2)
+    trains_per_day = st.sidebar.number_input("Поездов в сутки", min_value=1, max_value=100, value=7)
+    train_capacity_teu = st.sidebar.number_input("Вместимость поезда (TEU)", min_value=10, max_value=500, value=167, step=10)
+    st.sidebar.caption(f"≈ {train_capacity_teu * TEU_TO_TONS:,.0f} тонн (1 TEU = {TEU_TO_TONS} т)")
+    railway_capacity = st.sidebar.number_input("Количество ЖД путей", min_value=1, max_value=50, value=2)
 
     # Нагрузка
     st.sidebar.subheader("Нагрузка")
-    target_cargo = st.sidebar.number_input("Целевой грузооборот (млн тонн/год)", min_value=1.0, max_value=25.0, value=3.4, step=0.5)
-    ships_per_year = st.sidebar.number_input("Судозаходов в год", min_value=100, max_value=3000, value=714, step=50)
+    target_cargo = st.sidebar.number_input("Целевой грузооборот (млн тонн/год)", min_value=1.0, max_value=100.0, value=3.4, step=0.5)
+    ships_per_year = st.sidebar.number_input("Судозаходов в год", min_value=100, max_value=10000, value=714, step=50)
 
     # Распределение грузов
     st.sidebar.subheader("Распределение грузов (%)")
@@ -635,10 +640,10 @@ def main():
         'oil_speed': oil_speed,
         'general_speed': general_speed,
         'grain_storage_capacity': grain_storage,
-        'general_storage_capacity': general_storage,
+        'general_storage_capacity': general_storage_teu * TEU_TO_TONS,  # Перевод TEU в тонны
         'oil_storage_capacity': oil_storage,
         'trains_per_day': trains_per_day,
-        'train_capacity': train_capacity,
+        'train_capacity': train_capacity_teu * TEU_TO_TONS,  # Перевод TEU в тонны
         'railway_capacity': railway_capacity,
         'ships_per_year': ships_per_year,
         'cargo_distribution': {
